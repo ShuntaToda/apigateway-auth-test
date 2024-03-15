@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css"
 
 function App() {
   const [authInfo, setAuthInfo] = useState({})
+  const [message, setMessage] = useState("")
   const handleLogin = async () => {
     const params = {
       client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
@@ -17,26 +18,22 @@ function App() {
   }
 
   useEffect(() => {
-    console.log(window.location)
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const getAuthInfo = async () => {
       const responseAuthInfo = await requestAuthInfo(code)
-      console.log(responseAuthInfo)
-      setAuthInfo(responseAuthInfo)
+      if (responseAuthInfo.status === 200) {
+        setAuthInfo(responseAuthInfo.data)
+      }
     }
     getAuthInfo()
   }, []);
 
-  useEffect(() => {
-    const getMessage = async () => {
-      const response = await requestMessage(authInfo)
-      console.log(response)
-    }
-    // console.log(Object.keys(authInfo).length === 0 ? 1 : 0)
 
-    if (Object.keys(authInfo).length === 0 ? 1 : 0) getMessage()
-  }, [authInfo])
+  const getMessage = async () => {
+    const response = await requestMessage(authInfo)
+    setMessage(response)
+  }
 
 
   const requestAuthInfo = async (code) => {
@@ -53,8 +50,7 @@ function App() {
         body: JSON.stringify(params)
       });
       const data = await response.json();
-
-      return data
+      return { status: response.status, data: data }
     } catch (error) {
       console.error('API Request failed:', error);
     }
@@ -62,6 +58,7 @@ function App() {
 
   const requestMessage = async (authInfo) => {
     try {
+      console.log(authInfo)
       const response = await fetch("https://p2uj50alqh.execute-api.ap-northeast-1.amazonaws.com/poc-lambda-jwt01", {
         method: 'GET',
         headers: {
@@ -79,9 +76,15 @@ function App() {
 
   return (
     <div className="App container">
-      <div className='mt-4 text-center'>
-        <button className='btn btn-primary' onClick={handleLogin}>login</button>
-      </div>
+      {Object.keys(authInfo).length === 0 ? (
+        <div className='mt-4 text-center'>
+          <button className='btn btn-primary' onClick={handleLogin}>login</button>
+        </div>
+      ) : (
+        <div className='mt-4 text-center'>
+          <button className='btn btn-primary' onClick={getMessage}>getMessage</button>
+        </div>
+      )}
     </div>
   );
 }
