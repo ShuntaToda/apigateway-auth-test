@@ -4,8 +4,10 @@ import "bootstrap/dist/css/bootstrap.min.css"
 
 function App() {
   const [authInfo, setAuthInfo] = useState({})
+  const authorized = Object.keys(authInfo).length === 0 ? false : true
   const [message, setMessage] = useState("")
-  const handleLogin = async () => {
+
+  const handleLogin = () => {
     const params = {
       client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
       redirect_uri: "http://127.0.0.1:3000",
@@ -24,15 +26,20 @@ function App() {
       const responseAuthInfo = await requestAuthInfo(code)
       if (responseAuthInfo.status === 200) {
         setAuthInfo(responseAuthInfo.data)
+      } else {
+        // 処理
       }
     }
     getAuthInfo()
   }, []);
 
 
-  const getMessage = async () => {
-    const response = await requestMessage(authInfo)
-    setMessage(response)
+  const getMessage = () => {
+    const handleMessage = async () => {
+      const response = await requestMessage(authInfo)
+      setMessage(response)
+    }
+    handleMessage()
   }
 
 
@@ -53,6 +60,7 @@ function App() {
       return { status: response.status, data: data }
     } catch (error) {
       console.error('API Request failed:', error);
+      return {}
     }
   };
 
@@ -62,7 +70,8 @@ function App() {
       const response = await fetch("https://p2uj50alqh.execute-api.ap-northeast-1.amazonaws.com/poc-lambda-jwt01", {
         method: 'GET',
         headers: {
-          "Authorization": `Bearer ${authInfo.id_token}`,
+          "authorization": `Bearer ${authInfo.id_token}`,
+          "Content-Type": "application/json"
         }
       });
       const data = await response.json();
@@ -76,7 +85,7 @@ function App() {
 
   return (
     <div className="App container">
-      {Object.keys(authInfo).length === 0 ? (
+      {!authorized ? (
         <div className='mt-4 text-center'>
           <button className='btn btn-primary' onClick={handleLogin}>login</button>
         </div>
@@ -85,6 +94,7 @@ function App() {
           <button className='btn btn-primary' onClick={getMessage}>getMessage</button>
         </div>
       )}
+      <div>{message}</div>
     </div>
   );
 }
